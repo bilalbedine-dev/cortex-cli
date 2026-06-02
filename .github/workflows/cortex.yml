@@ -9,6 +9,7 @@ jobs:
   cortex-cwp-scan:
     name: Run Cloud Workload Protection Scan
     runs-on: ubuntu-latest
+    environment: cortex cli
 
     steps:
       - name: Checkout Repository
