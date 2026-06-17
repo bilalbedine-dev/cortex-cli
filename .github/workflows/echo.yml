@@ -1,19 +1,19 @@
-name: POC - Echo Secure Base Image Scan
+name: POC - Echo Secure Base Image Scan (Trivy + Cortex)
 
 on:
-  workflow_dispatch:  # Déclenchement manuel pour le POC
+  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   scan-echo-image:
+    name: Echo Image - Trivy & Cortex Scan
     runs-on: ubuntu-latest
     environment: cortex cli
 
     steps:
-      # 1. Checkout du repo
-      - name: Checkout
+      # 1. Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       # 2. Login au registry Echo
@@ -27,31 +27,26 @@ jobs:
       # 3. Pull de l'image Echo
       - name: Pull Echo Image
         run: |
-          docker pull reg.echohq.com/python:latest
+          docker pull ${{ secrets.ECHO_REGISTRY_URL }}/python:3.12
+          # On retag l'image pour simplifier les références suivantes
+          docker tag ${{ secrets.ECHO_REGISTRY_URL }}/python:3.12 echo-python:3.12
 
       # 4. Scan Trivy
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: reg.echohq.com/python:latest
+          image-ref: echo-python:3.12
           format: json
           output: trivy-echo-results.json
           severity: CRITICAL,HIGH,MEDIUM,LOW
-          exit-code: '0'  # '0' = ne fait pas échouer le pipeline sur vulns trouvées
+          exit-code: '0'
 
-      # 5. Upload du rapport Trivy en artifact
-      - name: Upload Trivy Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-echo-report
-          path: trivy-echo-results.json
-
-      # 6. Afficher un résumé dans les logs
+      # 5. Résumé Trivy dans les logs
       - name: Display Trivy Summary
         run: |
           echo "=== TRIVY SCAN SUMMARY - ECHO ==="
           cat trivy-echo-results.json | jq '
-            .Results[] | 
+            .Results[] |
             {
               Target: .Target,
               Critical: [.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length,
@@ -60,3 +55,44 @@ jobs:
               Low: [.Vulnerabilities[]? | select(.Severity=="LOW")] | length
             }
           '
+
+      # 6. Upload rapport Trivy
+      - name: Upload Trivy Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-echo-report
+          path: trivy-echo-results.json
+
+      # 7. Java 11 requis pour Cortex CLI
+      - name: Set up Java 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      # 8. Installation Cortex CLI
+      - name: Install Cortex CLI
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew tap paloaltonetworks/cortexcli
+          brew install cortexcli
+          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
+
+      # 9. Scan Cortex sur l'image Echo
+      - name: Run Cortex Image Scan
+        env:
+          CORTEX_API_BASE_URL: ${{ secrets.CORTEX_API_BASE_URL }}
+          CORTEX_API_KEY_ID: ${{ secrets.CORTEX_API_KEY_ID }}
+          CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}
+        run: |
+          echo "=== CORTEX SCAN SUMMARY - ECHO ==="
+          cortexcli image scan echo-python:3.12 --soft-fail
+
+      # 10. Upload rapport Cortex (si output fichier disponible)
+      - name: Upload Cortex Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-echo-report
+          path: cortex-echo-results.json
+          if-no-files-found: ignore
