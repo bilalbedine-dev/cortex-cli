@@ -9,6 +9,7 @@ on:
 jobs:
   scan-echo-image:
     runs-on: ubuntu-latest
+    environment: cortex cli
 
     steps:
       # 1. Checkout du repo
