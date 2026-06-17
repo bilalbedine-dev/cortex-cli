@@ -33,7 +33,7 @@ jobs:
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ secrets.ECHO_REGISTRY_URL }}/<image-name>:<tag>
+          image-ref: reg.echohq.com/python
           format: json
           output: trivy-echo-results.json
           severity: CRITICAL,HIGH,MEDIUM,LOW
