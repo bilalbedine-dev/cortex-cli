@@ -1,0 +1,61 @@
+name: POC - Echo Secure Base Image Scan
+
+on:
+  workflow_dispatch:  # Déclenchement manuel pour le POC
+  push:
+    branches:
+      - main
+
+jobs:
+  scan-echo-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout du repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Login au registry Echo
+      - name: Login to Echo Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ECHO_REGISTRY_URL }}
+          username: ${{ secrets.ECHO_REGISTRY_USERNAME }}
+          password: ${{ secrets.ECHO_REGISTRY_PASSWORD }}
+
+      # 3. Pull de l'image Echo
+      - name: Pull Echo Image
+        run: |
+          docker pull ${{ secrets.ECHO_REGISTRY_URL }}/<image-name>:<tag>
+
+      # 4. Scan Trivy
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.ECHO_REGISTRY_URL }}/<image-name>:<tag>
+          format: json
+          output: trivy-echo-results.json
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+          exit-code: '0'  # '0' = ne fait pas échouer le pipeline sur vulns trouvées
+
+      # 5. Upload du rapport Trivy en artifact
+      - name: Upload Trivy Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-echo-report
+          path: trivy-echo-results.json
+
+      # 6. Afficher un résumé dans les logs
+      - name: Display Trivy Summary
+        run: |
+          echo "=== TRIVY SCAN SUMMARY - ECHO ==="
+          cat trivy-echo-results.json | jq '
+            .Results[] | 
+            {
+              Target: .Target,
+              Critical: [.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length,
+              High: [.Vulnerabilities[]? | select(.Severity=="HIGH")] | length,
+              Medium: [.Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length,
+              Low: [.Vulnerabilities[]? | select(.Severity=="LOW")] | length
+            }
+          '
