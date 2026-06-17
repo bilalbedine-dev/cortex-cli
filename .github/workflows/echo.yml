@@ -74,10 +74,11 @@ jobs:
       - name: Install Cortex CLI
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          export HOMEBREW_NO_REQUIRE_TAP_TRUST=1    # ← corrige le breaking change Homebrew
           brew tap paloaltonetworks/cortexcli
           brew install cortexcli
           echo "$(brew --prefix)/bin" >> $GITHUB_PATH
-
+        
       # 9. Scan Cortex sur l'image Echo
       - name: Run Cortex Image Scan
         env:
