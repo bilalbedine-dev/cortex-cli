@@ -86,7 +86,7 @@ jobs:
           CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}
         run: |
           echo "=== CORTEX SCAN SUMMARY - ECHO ==="
-          cortexcli image scan echo-python:3.12 --soft-fail
+          cortexcli image scan echo-python:3.12 --soft-fail | tee cortex-echo-results.json
 
       # 10. Upload rapport Cortex (si output fichier disponible)
       - name: Upload Cortex Report
