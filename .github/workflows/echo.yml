@@ -27,13 +27,13 @@ jobs:
       # 3. Pull de l'image Echo
       - name: Pull Echo Image
         run: |
-          docker pull reg.echohq.com/python
+          docker pull reg.echohq.com/python:latest
 
       # 4. Scan Trivy
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: reg.echohq.com/python
+          image-ref: reg.echohq.com/python:latest
           format: json
           output: trivy-echo-results.json
           severity: CRITICAL,HIGH,MEDIUM,LOW
