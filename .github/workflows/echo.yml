@@ -74,11 +74,11 @@ jobs:
       - name: Install Cortex CLI
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          export HOMEBREW_NO_REQUIRE_TAP_TRUST=1    # ← corrige le breaking change Homebrew
+          export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
           brew tap paloaltonetworks/cortexcli
           brew install cortexcli
           echo "$(brew --prefix)/bin" >> $GITHUB_PATH
-        
+
       # 9. Scan Cortex sur l'image Echo
       - name: Run Cortex Image Scan
         env:
@@ -87,13 +87,22 @@ jobs:
           CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}
         run: |
           echo "=== CORTEX SCAN SUMMARY - ECHO ==="
-          cortexcli image scan echo-python:3.12 --soft-fail | tee cortex-echo-results.json
+          cortexcli image scan echo-python:3.12 --soft-fail 2>&1 | tee cortex-echo-results.txt
 
-      # 10. Upload rapport Cortex (si output fichier disponible)
+      # 10. Debug - Vérification de l'output Cortex
+      - name: Debug - Verify Cortex Output
+        if: always()
+        run: |
+          echo "=== Taille du fichier ==="
+          wc -l cortex-echo-results.txt
+          echo "=== Contenu ==="
+          cat cortex-echo-results.txt
+
+      # 11. Upload rapport Cortex
       - name: Upload Cortex Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cortex-echo-report
-          path: cortex-echo-results.json
-          if-no-files-found: ignore
+          path: cortex-echo-results.txt    # ← .txt au lieu de .json
+          if-no-files-found: warn          # ← warn au lieu de ignore pour voir l'erreur
