@@ -26,7 +26,7 @@ jobs:
       # 3. Pull de l'image Echo
       - name: Pull Echo Image
         run: |
-          docker pull ${{ secrets.ECHO_REGISTRY_URL }}/<image-name>:<tag>
+          docker pull reg.echohq.com/python
 
       # 4. Scan Trivy
       - name: Run Trivy Scan
