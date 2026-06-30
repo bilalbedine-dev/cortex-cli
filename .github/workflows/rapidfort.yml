@@ -32,11 +32,11 @@ jobs:
           echo "${{ secrets.RAPIDFORT_CREDENTIALS }}" > ~/.rapidfort/credentials
           echo "Credentials file injected ✅"
 
-      # 4. Pull de l'image Rapidfort avec le bon tag
+      # 4. Pull image Rapidfort — Debian Trixie (même OS que Echo pour comparaison équitable)
       - name: Pull Rapidfort Image
         run: |
-          docker pull quay.io/rfcurated/python:3.12-rfcurated
-          docker tag quay.io/rfcurated/python:3.12-rfcurated rapidfort-python:3.12
+          docker pull quay.io/rfcurated/python:3.12.13-trixie-rfcurated
+          docker tag quay.io/rfcurated/python:3.12.13-trixie-rfcurated rapidfort-python:3.12
 
       # 5. Scan Trivy
       - name: Run Trivy Scan
