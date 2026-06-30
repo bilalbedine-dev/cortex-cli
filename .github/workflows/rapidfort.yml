@@ -26,11 +26,17 @@ jobs:
           curl -sSL https://us01.rapidfort.com/cli | bash
           echo "/home/runner/work/cortex-cli/cortex-cli/rapidfort" >> $GITHUB_PATH
 
-      # 3. Login Rapidfort — mapping correct des secrets
+      # 3. Login via fichier credentials
       - name: Login to Rapidfort
         run: |
-          export RF_ACCESS_ID="${{ secrets.RAPIDFORT_USERNAME }}"
-          export RF_SECRET_ACCESS_KEY="${{ secrets.RAPIDFORT_PASSWORD }}"
+          mkdir -p ~/.rapidfort
+          cat > ~/.rapidfort/credentials << EOF
+          RF_ACCESS_ID=${{ secrets.RAPIDFORT_USERNAME }}
+          RF_SECRET_ACCESS_KEY=${{ secrets.RAPIDFORT_PASSWORD }}
+          RF_ROOT_URL=https://us01.rapidfort.com
+          EOF
+          echo "Credentials file created (values masked):"
+          cat ~/.rapidfort/credentials | sed 's/=.*/=***/'
           rflogin
 
       # 4. Pull de l'image Rapidfort
@@ -98,12 +104,4 @@ jobs:
           echo "=== CORTEX SCAN SUMMARY - RAPIDFORT ==="
           cortexcli image scan rapidfort-python:3.12 --soft-fail 2>&1 | tee cortex-rapidfort-results.txt
 
-      # 11. Upload rapport Cortex
-      - name: Upload Cortex Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cortex-rapidfort-report
-          path: cortex-rapidfort-results.txt
-          if-no-files-found: warn
-          retention-days: 30
+      #
