@@ -25,18 +25,22 @@ jobs:
           curl -sSL https://us01.rapidfort.com/cli | bash
           echo "/home/runner/work/cortex-cli/cortex-cli/rapidfort" >> $GITHUB_PATH
 
-      # 3. Injecter le fichier credentials
-      - name: Setup Rapidfort Credentials
+      # 3. Injecter credentials + configurer Docker via rflogin
+      - name: Setup Rapidfort Credentials & Login
         run: |
           mkdir -p ~/.rapidfort
           echo "${{ secrets.RAPIDFORT_CREDENTIALS }}" > ~/.rapidfort/credentials
           echo "Credentials file injected ✅"
+          # rflogin lit le fichier et configure le credential helper Docker pour quay.io
+          rflogin
 
-      # 4. Pull image Rapidfort — Debian Trixie (même OS que Echo pour comparaison équitable)
+      # 4. Pull de l'image Rapidfort (Debian Trixie — même OS que Echo)
       - name: Pull Rapidfort Image
         run: |
-          docker pull quay.io/rfcurated/nginx:1.31.2-slim-alpine3.21-rfcurated-rfhardened
-          docker tag quay.io/rfcurated/nginx:1.31.2-slim-alpine3.21-rfcurated-rfhardened rapidfort-nginx:alpine3.21
+          docker pull quay.io/rfcurated/python:3.12.13-trixie-rfcurated
+          docker tag quay.io/rfcurated/python:3.12.13-trixie-rfcurated rapidfort-python:3.12
+          echo "=== Image vérification ==="
+          docker images | grep rapidfort-python
 
       # 5. Scan Trivy
       - name: Run Trivy Scan
