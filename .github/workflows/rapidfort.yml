@@ -28,9 +28,18 @@ jobs:
       # 3. Login Rapidfort
       - name: Login to Rapidfort
         env:
-          RF_ACCESS_ID: ${{ secrets.RAPIDFORT_USERNAME }}
-          RF_SECRET_ACCESS_KEY: ${{ secrets.RAPIDFORT_PASSWORD }}
-        run: rflogin
+          RF_CONTAINER_ENGINE: docker
+        run: |
+          # Affiche les options disponibles
+          rflogin --help || true
+
+          # Tente le login avec flags directs
+          rflogin \
+            --access-id "${{ secrets.RF_ACCESS_ID }}" \
+            --secret-key "${{ secrets.RF_SECRET_ACCESS_KEY }}" \
+          || \
+          # Fallback : pipe interactif
+          echo -e "${{ secrets.RF_ACCESS_ID }}\n${{ secrets.RF_SECRET_ACCESS_KEY }}" | rflogin
 
       # 4. Pull de l'image Rapidfort
       - name: Pull Rapidfort Image
