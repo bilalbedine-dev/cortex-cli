@@ -16,23 +16,24 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Installation CLI Rapidfort via pip (plus fiable en CI)
+      # 2. Installation CLI Rapidfort (URL officielle doc)
       - name: Install Rapidfort CLI
         run: |
-          pip install rapidfort
-          rflogin --version || echo "CLI installed"
+          curl -sSL https://us01.rapidfort.com/cli | bash
+          echo "$HOME/.rapidfort/bin" >> $GITHUB_PATH
 
-      # 3. Login via CLI Rapidfort
+      # 3. Login Rapidfort
       - name: Login to Rapidfort
-        run: |
-          rflogin --username ${{ secrets.RAPIDFORT_USERNAME }} \
-                  --password ${{ secrets.RAPIDFORT_PASSWORD }}
+        env:
+          RF_ACCESS_ID: ${{ secrets.RAPIDFORT_USERNAME }}
+          RF_SECRET_ACCESS_KEY: ${{ secrets.RAPIDFORT_PASSWORD }}
+        run: rflogin
 
-      # 4. Pull de l'image Python Rapidfort (Docker Hub public)
+      # 4. Pull de l'image Rapidfort
       - name: Pull Rapidfort Image
         run: |
-          docker pull rapidfort/python:3.12
-          docker tag rapidfort/python:3.12 rapidfort-python:3.12
+          docker pull quay.io/rfcurated/python:3.12
+          docker tag quay.io/rfcurated/python:3.12 rapidfort-python:3.12
 
       # 5. Scan Trivy
       - name: Run Trivy Scan
@@ -102,5 +103,3 @@ jobs:
           path: cortex-rapidfort-results.txt
           if-no-files-found: warn
           retention-days: 30
-
-   
