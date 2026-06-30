@@ -6,7 +6,8 @@ on:
     branches: [ main ]
 
 env:
-  RF_CONTAINER_ENGINE: docker   # ← fix global pour tout le workflow
+  RF_CONTAINER_ENGINE: docker
+  RF_ROOT_URL: https://us01.rapidfort.com
 
 jobs:
   scan-rapidfort-image:
@@ -25,29 +26,26 @@ jobs:
           curl -sSL https://us01.rapidfort.com/cli | bash
           echo "/home/runner/work/cortex-cli/cortex-cli/rapidfort" >> $GITHUB_PATH
 
-      # 3. Login Rapidfort
-      - name: Login to Rapidfort
-        env:
-          RF_CONTAINER_ENGINE: docker
+      # 3. Debug - Vérification secrets
+      - name: Debug - Check RF secrets
         run: |
-          # Affiche les options disponibles
-          rflogin --help || true
+          echo "RAPIDFORT_USERNAME is set: ${{ secrets.RAPIDFORT_USERNAME != '' }}"
+          echo "RAPIDFORT_PASSWORD is set: ${{ secrets.RAPIDFORT_PASSWORD != '' }}"
 
-          # Tente le login avec flags directs
-          rflogin \
-            --access-id "${{ secrets.RF_ACCESS_ID }}" \
-            --secret-key "${{ secrets.RF_SECRET_ACCESS_KEY }}" \
-          || \
-          # Fallback : pipe interactif
-          echo -e "${{ secrets.RF_ACCESS_ID }}\n${{ secrets.RF_SECRET_ACCESS_KEY }}" | rflogin
+      # 4. Login Rapidfort via export explicite
+      - name: Login to Rapidfort
+        run: |
+          export RAPIDFORT_USERNAME="${{ secrets.RAPIDFORT_USERNAME }}"
+          export RAPIDFORT_PASSWORD="${{ secrets.RAPIDFORT_PASSWORD }}"
+          rflogin
 
-      # 4. Pull de l'image Rapidfort
+      # 5. Pull de l'image Rapidfort
       - name: Pull Rapidfort Image
         run: |
           docker pull quay.io/rfcurated/python:3.12
           docker tag quay.io/rfcurated/python:3.12 rapidfort-python:3.12
 
-      # 5. Scan Trivy
+      # 6. Scan Trivy
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -57,7 +55,7 @@ jobs:
           severity: CRITICAL,HIGH,MEDIUM,LOW
           exit-code: '0'
 
-      # 6. Résumé Trivy dans les logs
+      # 7. Résumé Trivy dans les logs
       - name: Display Trivy Summary
         run: |
           echo "=== TRIVY SCAN SUMMARY - RAPIDFORT ==="
@@ -72,7 +70,7 @@ jobs:
             }
           '
 
-      # 7. Upload rapport Trivy
+      # 8. Upload rapport Trivy
       - name: Upload Trivy Report
         uses: actions/upload-artifact@v4
         with:
@@ -80,14 +78,14 @@ jobs:
           path: trivy-rapidfort-results.json
           retention-days: 30
 
-      # 8. Java 11 requis pour Cortex CLI
+      # 9. Java 11 requis pour Cortex CLI
       - name: Set up Java 11
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '11'
 
-      # 9. Installation Cortex CLI
+      # 10. Installation Cortex CLI
       - name: Install Cortex CLI
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
@@ -96,7 +94,7 @@ jobs:
           brew install cortexcli
           echo "$(brew --prefix)/bin" >> $GITHUB_PATH
 
-      # 10. Scan Cortex
+      # 11. Scan Cortex
       - name: Run Cortex Image Scan
         env:
           CORTEX_API_BASE_URL: ${{ secrets.CORTEX_API_BASE_URL }}
@@ -106,7 +104,7 @@ jobs:
           echo "=== CORTEX SCAN SUMMARY - RAPIDFORT ==="
           cortexcli image scan rapidfort-python:3.12 --soft-fail 2>&1 | tee cortex-rapidfort-results.txt
 
-      # 11. Upload rapport Cortex
+      # 12. Upload rapport Cortex
       - name: Upload Cortex Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -115,4 +113,3 @@ jobs:
           path: cortex-rapidfort-results.txt
           if-no-files-found: warn
           retention-days: 30
-
