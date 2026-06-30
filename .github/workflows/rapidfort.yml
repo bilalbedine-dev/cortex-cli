@@ -31,22 +31,21 @@ jobs:
           mkdir -p ~/.rapidfort
           echo "${{ secrets.RAPIDFORT_CREDENTIALS }}" > ~/.rapidfort/credentials
           echo "Credentials file injected ✅"
-          # rflogin lit le fichier et configure le credential helper Docker pour quay.io
           rflogin
 
-      # 4. Pull de l'image Rapidfort (Debian Trixie — même OS que Echo)
+      # 4. Pull de l'image Rapidfort nginx alpine3.21
       - name: Pull Rapidfort Image
         run: |
-          docker pull quay.io/rfcurated/python:3.12.13-trixie-rfcurated
-          docker tag quay.io/rfcurated/python:3.12.13-trixie-rfcurated rapidfort-python:3.12
+          docker pull quay.io/rfcurated/nginx:alpine3.21-rfcurated
+          docker tag quay.io/rfcurated/nginx:alpine3.21-rfcurated rapidfort-nginx:alpine3.21
           echo "=== Image vérification ==="
-          docker images | grep rapidfort-python
+          docker images | grep rapidfort-nginx
 
       # 5. Scan Trivy
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: rapidfort-python:3.12
+          image-ref: rapidfort-nginx:alpine3.21
           format: json
           output: trivy-rapidfort-results.json
           severity: CRITICAL,HIGH,MEDIUM,LOW
@@ -55,7 +54,7 @@ jobs:
       # 6. Résumé Trivy dans les logs
       - name: Display Trivy Summary
         run: |
-          echo "=== TRIVY SCAN SUMMARY - RAPIDFORT ==="
+          echo "=== TRIVY SCAN SUMMARY - RAPIDFORT nginx ==="
           cat trivy-rapidfort-results.json | jq '
             .Results[] |
             {
@@ -98,8 +97,8 @@ jobs:
           CORTEX_API_KEY_ID: ${{ secrets.CORTEX_API_KEY_ID }}
           CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}
         run: |
-          echo "=== CORTEX SCAN SUMMARY - RAPIDFORT ==="
-          cortexcli image scan rapidfort-python:3.12 --soft-fail 2>&1 | tee cortex-rapidfort-results.txt
+          echo "=== CORTEX SCAN SUMMARY - RAPIDFORT nginx ==="
+          cortexcli image scan rapidfort-nginx:alpine3.21 --soft-fail 2>&1 | tee cortex-rapidfort-results.txt
 
       # 11. Upload rapport Cortex
       - name: Upload Cortex Report
