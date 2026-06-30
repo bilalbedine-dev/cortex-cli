@@ -7,7 +7,6 @@ on:
 
 env:
   RF_CONTAINER_ENGINE: docker
-  RF_ROOT_URL: https://us01.rapidfort.com
 
 jobs:
   scan-rapidfort-image:
@@ -26,18 +25,12 @@ jobs:
           curl -sSL https://us01.rapidfort.com/cli | bash
           echo "/home/runner/work/cortex-cli/cortex-cli/rapidfort" >> $GITHUB_PATH
 
-      # 3. Login via fichier credentials (sans indentation dans le heredoc)
-      - name: Login to Rapidfort
+      # 3. Injecter le fichier credentials depuis le secret GitHub
+      - name: Setup Rapidfort Credentials
         run: |
           mkdir -p ~/.rapidfort
-          cat > ~/.rapidfort/credentials << 'EOF'
-          RF_ACCESS_ID=${{ secrets.RAPIDFORT_USERNAME }}
-          RF_SECRET_ACCESS_KEY=${{ secrets.RAPIDFORT_PASSWORD }}
-          RF_ROOT_URL=https://us01.rapidfort.com
-          EOF
-          echo "Credentials file created (values masked):"
-          cat ~/.rapidfort/credentials | sed 's/=.*/=***/'
-          rflogin
+          echo "${{ secrets.RAPIDFORT_CREDENTIALS }}" > ~/.rapidfort/credentials
+          echo "Credentials file injected ✅"
 
       # 4. Pull de l'image Rapidfort
       - name: Pull Rapidfort Image
