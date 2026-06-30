@@ -65,7 +65,15 @@ jobs:
               Low: [.Vulnerabilities[]? | select(.Severity=="LOW")] | length
             }
           '
-
+          
+      - name: Debug - Verify Trivy Output
+        if: always()
+        run: |
+          echo "=== Fichiers présents ==="
+          ls -la
+          echo "=== trivy-docker-results.json ==="
+          cat trivy-rf-results.json || echo "Fichier inexistant"
+          
       # 7. Upload rapport Trivy
       - name: Upload Trivy Report
         uses: actions/upload-artifact@v4
@@ -99,6 +107,15 @@ jobs:
         run: |
           echo "=== CORTEX SCAN SUMMARY - RAPIDFORT nginx ==="
           cortexcli image scan rapidfort-nginx:alpine3.21 --soft-fail 2>&1 | tee cortex-rapidfort-results.txt
+          
+     # 10. Debug - Vérification de l'output Cortex
+      - name: Debug - Verify Cortex Output
+        if: always()
+        run: |
+          echo "=== Taille du fichier ==="
+          wc -l cortex-echo-results.txt
+          echo "=== Contenu ==="
+          cat cortex-rf-results.txt
 
       # 11. Upload rapport Cortex
       - name: Upload Cortex Report
