@@ -16,19 +16,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Installation CLI Rapidfort
+      # 2. Installation CLI Rapidfort via pip (plus fiable en CI)
       - name: Install Rapidfort CLI
         run: |
-          curl -sSL https://rapidfort.com/install.sh | bash
-          echo "/usr/local/bin" >> $GITHUB_PATH
+          pip install rapidfort
+          rflogin --version || echo "CLI installed"
 
       # 3. Login via CLI Rapidfort
       - name: Login to Rapidfort
         run: |
-          rflogin --username ${{ secrets.RF_EMAIL }} \
-                  --password ${{ secrets.RF_PASSWORD }}
+          rflogin --username ${{ secrets.RAPIDFORT_USERNAME }} \
+                  --password ${{ secrets.RAPIDFORT_PASSWORD }}
 
-      # 4. Pull de l'image Python via CLI Rapidfort
+      # 4. Pull de l'image Python Rapidfort (Docker Hub public)
       - name: Pull Rapidfort Image
         run: |
           docker pull rapidfort/python:3.12
@@ -102,3 +102,5 @@ jobs:
           path: cortex-rapidfort-results.txt
           if-no-files-found: warn
           retention-days: 30
+
+   
