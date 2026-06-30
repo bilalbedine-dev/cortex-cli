@@ -5,6 +5,9 @@ on:
   push:
     branches: [ main ]
 
+env:
+  RF_CONTAINER_ENGINE: docker   # ← fix global pour tout le workflow
+
 jobs:
   scan-rapidfort-image:
     name: Rapidfort Image - Trivy & Cortex Scan
@@ -16,11 +19,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Installation CLI Rapidfort (URL officielle doc)
+      # 2. Installation CLI Rapidfort
       - name: Install Rapidfort CLI
         run: |
           curl -sSL https://us01.rapidfort.com/cli | bash
-          echo "$HOME/.rapidfort/bin" >> $GITHUB_PATH
+          echo "/home/runner/work/cortex-cli/cortex-cli/rapidfort" >> $GITHUB_PATH
 
       # 3. Login Rapidfort
       - name: Login to Rapidfort
@@ -103,3 +106,4 @@ jobs:
           path: cortex-rapidfort-results.txt
           if-no-files-found: warn
           retention-days: 30
+
