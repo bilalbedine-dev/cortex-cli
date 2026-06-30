@@ -25,18 +25,18 @@ jobs:
           curl -sSL https://us01.rapidfort.com/cli | bash
           echo "/home/runner/work/cortex-cli/cortex-cli/rapidfort" >> $GITHUB_PATH
 
-      # 3. Injecter le fichier credentials depuis le secret GitHub
+      # 3. Injecter le fichier credentials
       - name: Setup Rapidfort Credentials
         run: |
           mkdir -p ~/.rapidfort
           echo "${{ secrets.RAPIDFORT_CREDENTIALS }}" > ~/.rapidfort/credentials
           echo "Credentials file injected ✅"
 
-      # 4. Pull de l'image Rapidfort
+      # 4. Pull de l'image Rapidfort avec le bon tag
       - name: Pull Rapidfort Image
         run: |
-          docker pull quay.io/rfcurated/python:3.12
-          docker tag quay.io/rfcurated/python:3.12 rapidfort-python:3.12
+          docker pull quay.io/rfcurated/python:3.12-rfcurated
+          docker tag quay.io/rfcurated/python:3.12-rfcurated rapidfort-python:3.12
 
       # 5. Scan Trivy
       - name: Run Trivy Scan
